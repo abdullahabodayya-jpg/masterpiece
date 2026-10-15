@@ -1,0 +1,109 @@
+/* ==========================================================
+   Frame — Design Tokens (token.css)
+   Single source of truth for color, type, spacing, radius,
+   shadow and motion. Light is default; dark via data-theme.
+   ========================================================== */
+
+:root {
+  /* ---- Brand ---- */
+  --brand-500: #ff6b00; /* primary */
+  --brand-600: #e85d00; /* hover */
+  --brand-50: #fff1e6; /* light tint */
+
+  /* ---- Neutrals ---- */
+  --white: #ffffff;
+  --black: #111111;
+  --gray-500: #6b7280;
+  --gray-50: #f7f7f7;
+
+  /* ---- Status ---- */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+
+  /* ---- Semantic (Light) ---- */
+  --bg: var(--gray-50);
+  --surface: var(--white);
+  --border: #ececec;
+  --text: var(--black);
+  --text-muted: var(--gray-500);
+  --primary: var(--brand-500);
+  --primary-hover: var(--brand-600);
+  --primary-soft: var(--brand-50);
+  --on-primary: var(--white);
+  --shadow-card: 0 4px 18px rgba(0, 0, 0, 0.05);
+  --shadow-lift: 0 10px 26px rgba(0, 0, 0, 0.1);
+  --overlay: rgba(0, 0, 0, 0.6);
+
+  /* ---- Typography ---- */
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 22px;
+  --fs-2xl: 28px;
+  --fs-hero: clamp(34px, 6vw, 60px);
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --lh-tight: 1.1;
+  --lh-base: 1.5;
+
+  /* ---- Spacing (4px scale) ---- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* ---- Radius ---- */
+  --r-input: 12px; /* 10–14 */
+  --r-btn: 12px;
+  --r-card: 20px; /* 16–24 */
+  --r-modal: 20px;
+  --r-pill: 999px;
+
+  /* ---- Layout ---- */
+  --sidebar-w: 230px;
+  --content-max: 1150px;
+
+  /* ---- Motion ---- */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t-fast: 0.15s;
+  --t-base: 0.25s;
+  --t-slow: 0.6s;
+
+  /* ---- Z-index ---- */
+  --z-top: 5;
+  --z-nav: 10;
+  --z-modal: 20;
+  --z-toast: 30;
+}
+
+/* ---- Dark theme ---- */
+:root[data-theme="dark"] {
+  --bg: #0f0f0f;
+  --surface: #181818;
+  --border: #2a2a2a;
+  --text: #ffffff;
+  --text-muted: #a1a1aa;
+  --primary-soft: #2a1a0d;
+  --shadow-card: none;
+  --shadow-lift: 0 10px 26px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-fast: 0s;
+    --t-base: 0s;
+    --t-slow: 0s;
+  }
+}
