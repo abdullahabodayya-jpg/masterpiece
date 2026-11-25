@@ -14,10 +14,10 @@ final class MarketplaceApi
 {
     public function __construct(private readonly MarketplaceAccess $access) {}
 
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next, string $scope = 'marketplace'): Response
     {
         $request->headers->set('Accept', 'application/json');
-        if ($viewer = $request->user('sanctum')) {
+        if ($scope === 'marketplace' && ($viewer = $request->user('sanctum'))) {
             // A signed-in account must satisfy the module eligibility policy even on public routes.
             try {
                 $this->access->actor($viewer);

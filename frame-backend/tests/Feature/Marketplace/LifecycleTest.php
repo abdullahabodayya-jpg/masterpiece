@@ -31,6 +31,8 @@ final class LifecycleTest extends MarketplaceTestCase
         $active = EditorService::factory()->for($editor, 'editor')->for($type)->create(['status' => 'active']);
         $this->getJson($url)->assertOk()->assertJsonCount(0, 'data');
         EditorVerificationRequest::factory()->for($editor, 'editor')->create(['status' => 'approved', 'decided_at' => now()]);
+        $this->getJson($url)->assertOk()->assertJsonCount(0, 'data');
+        ArchivedPivot::attachOrRestore($editor->contentTypes(), $type->id);
         $this->assertSame(1, $this->queryCount(fn () => $this->getJson("{$url}?content_type_id={$type->id}")
             ->assertOk()->assertJsonPath('data.0.id', $active->id)));
         $this->getJson("/api/v1/editors/{$editor->id}/services")->assertOk()->assertJsonCount(1, 'data');

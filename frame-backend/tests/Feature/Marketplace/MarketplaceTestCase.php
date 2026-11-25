@@ -22,10 +22,11 @@ abstract class MarketplaceTestCase extends TestCase
             $this->markTestSkipped('Use the isolated frame_marketplace_test_001 MariaDB schema.');
         }
 
+        $expected = $this->expectedDatabase();
         $this->assertContains($db->getDriverName(), ['mysql', 'mariadb']);
-        $this->assertSame('frame_marketplace_test_001', $db->getDatabaseName());
+        $this->assertSame($expected, $db->getDatabaseName());
         foreach ([$db->getPdo(), $db->getReadPdo()] as $pdo) {
-            $this->assertSame('frame_marketplace_test_001', $pdo->query('SELECT DATABASE()')->fetchColumn());
+            $this->assertSame($expected, $pdo->query('SELECT DATABASE()')->fetchColumn());
             $this->assertStringContainsString('MariaDB', $pdo->getAttribute(PDO::ATTR_SERVER_VERSION));
         }
 
@@ -37,9 +38,15 @@ abstract class MarketplaceTestCase extends TestCase
         $db->beginTransaction();
         $this->beforeApplicationDestroyed(fn () => $db->rollBack());
 
-        foreach (['profile', 'marketplace'] as $module) {
+        $modules = $expected === 'frame_verification_test_001' ? ['profile', 'marketplace', 'verification'] : ['profile', 'marketplace'];
+        foreach ($modules as $module) {
             Route::prefix('api/v1')->middleware('api')->group(base_path("routes/api/{$module}.php"));
         }
+    }
+
+    protected function expectedDatabase(): string
+    {
+        return getenv('FRAME_VERIFICATION_REGRESSION') === '1' ? 'frame_verification_test_001' : 'frame_marketplace_test_001';
     }
 
     protected function signIn(User $user): User
