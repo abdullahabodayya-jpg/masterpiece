@@ -16,6 +16,8 @@ final class WorkResource extends JsonResource
             ...$this->only(['id', 'creator_id', 'editor_id', 'editor_service_id', 'content_type_id', 'editing_tool_id', 'title',
                 'description', 'budget_min', 'budget_max', 'currency', 'quantity']),
             'agreed_price' => $this->when($participant, $this->agreed_price),
+            'agreed_at' => $this->when($participant, $this->agreed_at?->toISOString()),
+            'started_at' => $this->when($participant, $this->started_at?->toISOString()),
             'type' => $this->type->value,
             'status' => $this->status->value,
             'deadline' => $this->deadline?->toISOString(),

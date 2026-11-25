@@ -10,6 +10,7 @@ use App\Http\Resources\Marketplace\ServiceResource;
 use App\Models\EditorService;
 use App\Models\User;
 use App\Services\Marketplace\MarketplaceAccess;
+use Brick\Math\BigDecimal;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -62,6 +63,22 @@ final class ServiceController
         return new ServiceResource($this->save($request, $serviceId));
     }
 
+    public function publish(Request $request, string $serviceId): ServiceResource
+    {
+        $service = $this->access->write($request->user('sanctum'), UserRole::Editor, function (User $editor) use ($serviceId) {
+            $listing = $editor->editorServices()->lockForUpdate()->findOrFail($serviceId);
+            abort_unless(in_array($listing->status, [ServiceStatus::Draft, ServiceStatus::Paused], true), 409);
+            abort_unless($listing->content_type_id !== null && BigDecimal::of($listing->price)->isPositive(), 409);
+            $this->access->requireEditor($editor, $listing->content_type_id);
+            $listing->status = ServiceStatus::Active;
+            $listing->save();
+
+            return $listing;
+        });
+
+        return new ServiceResource($service);
+    }
+
     public function pause(Request $request, string $serviceId): ServiceResource
     {
         $service = $this->access->write($request->user('sanctum'), UserRole::Editor, function (User $editor) use ($serviceId) {
@@ -105,9 +122,7 @@ final class ServiceController
     private function visible(?User $viewer): Builder
     {
         return EditorService::query()->where('status', ServiceStatus::Active->value)
-            ->whereHas('editor', fn (Builder $editors) => $this->access->recordedApproval(
-                $this->access->people($editors, $viewer, UserRole::Editor),
-            ));
+            ->whereHas('editor', fn (Builder $editors) => $this->access->eligibleEditors($editors, $viewer));
     }
 
     private function listing(CatalogRequest $request, Builder $query): JsonResponse
