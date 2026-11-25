@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Conversation extends Model
@@ -37,5 +38,11 @@ class Conversation extends Model
             ->withPivot('joined_at', 'last_read_at', 'deleted_at')
             ->withTimestamps()
             ->wherePivotNull('deleted_at');
+    }
+
+    public function latestMessage(): HasOne
+    {
+        return $this->hasOne(ConversationMessage::class, 'conversation_id')
+            ->ofMany(['created_at' => 'max', 'id' => 'max']);
     }
 }

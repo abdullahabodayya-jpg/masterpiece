@@ -39,6 +39,7 @@ abstract class MarketplaceTestCase extends TestCase
         $this->beforeApplicationDestroyed(fn () => $db->rollBack());
 
         $modules = match ($expected) {
+            'frame_messaging_test_001' => ['profile', 'marketplace', 'verification', 'work', 'messaging'],
             'frame_work_test_001' => ['profile', 'marketplace', 'verification', 'work'],
             'frame_verification_test_001' => ['profile', 'marketplace', 'verification'],
             default => ['profile', 'marketplace'],
@@ -50,6 +51,10 @@ abstract class MarketplaceTestCase extends TestCase
 
     protected function expectedDatabase(): string
     {
+        if (getenv('FRAME_MESSAGING_REGRESSION') === '1') {
+            return 'frame_messaging_test_001';
+        }
+
         if (getenv('FRAME_WORK_REGRESSION') === '1') {
             return 'frame_work_test_001';
         }
