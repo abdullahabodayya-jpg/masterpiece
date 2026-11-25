@@ -28,9 +28,59 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'password_hash' => static::$password ??= Hash::make('password'),
+            'role' => fake()->randomElement(['creator', 'editor']),
+            'status' => 'active',
+            'display_name' => fake()->userName(),
+            'bio' => fake()->paragraph(),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    public function creator(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'role' => 'creator',
+            'creator_niche' => fake()->randomElement([
+                'Gaming',
+                'Education',
+                'Technology',
+                'Lifestyle',
+                'Entertainment',
+            ]),
+            'audience_size' => fake()->numberBetween(100, 1000000),
+            'audience_size_updated_at' => now(),
+        ]);
+    }
+
+    public function editor(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'role' => 'editor',
+            'experience_level' => fake()->randomElement([
+                'junior',
+                'intermediate',
+                'senior',
+                'expert',
+            ]),
+            'years_of_experience' => fake()->numberBetween(1, 15),
+            'professional_title' => 'Video Editor',
+            'is_open_to_work' => true,
+        ]);
+    }
+
+    public function admin(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'role' => 'admin',
+        ]);
+    }
+
+    public function support(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'role' => 'support',
+        ]);
     }
 
     /**
@@ -38,7 +88,7 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'email_verified_at' => null,
         ]);
     }
