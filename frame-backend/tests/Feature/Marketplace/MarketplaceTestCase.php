@@ -38,7 +38,11 @@ abstract class MarketplaceTestCase extends TestCase
         $db->beginTransaction();
         $this->beforeApplicationDestroyed(fn () => $db->rollBack());
 
-        $modules = $expected === 'frame_verification_test_001' ? ['profile', 'marketplace', 'verification'] : ['profile', 'marketplace'];
+        $modules = match ($expected) {
+            'frame_work_test_001' => ['profile', 'marketplace', 'verification', 'work'],
+            'frame_verification_test_001' => ['profile', 'marketplace', 'verification'],
+            default => ['profile', 'marketplace'],
+        };
         foreach ($modules as $module) {
             Route::prefix('api/v1')->middleware('api')->group(base_path("routes/api/{$module}.php"));
         }
@@ -46,6 +50,10 @@ abstract class MarketplaceTestCase extends TestCase
 
     protected function expectedDatabase(): string
     {
+        if (getenv('FRAME_WORK_REGRESSION') === '1') {
+            return 'frame_work_test_001';
+        }
+
         return getenv('FRAME_VERIFICATION_REGRESSION') === '1' ? 'frame_verification_test_001' : 'frame_marketplace_test_001';
     }
 
