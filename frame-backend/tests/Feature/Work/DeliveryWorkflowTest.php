@@ -16,7 +16,7 @@ final class DeliveryWorkflowTest extends MarketplaceTestCase
 {
     protected function expectedDatabase(): string
     {
-        return 'frame_work_test_001';
+        return getenv('FRAME_MESSAGING_REGRESSION') === '1' ? 'frame_messaging_test_001' : 'frame_work_test_001';
     }
 
     public function test_project_material_and_mutations_are_gated_separately(): void
