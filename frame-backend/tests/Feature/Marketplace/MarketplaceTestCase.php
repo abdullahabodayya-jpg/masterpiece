@@ -23,6 +23,10 @@ abstract class MarketplaceTestCase extends TestCase
         }
 
         $expected = $this->expectedDatabase();
+        if ($expected === 'frame_payments_test_002') {
+            $this->assertTrue($this->app->environment('testing'));
+            config(['frame.payment_mode' => 'disabled', 'frame.stripe' => []]);
+        }
         $this->assertContains($db->getDriverName(), ['mysql', 'mariadb']);
         $this->assertSame($expected, $db->getDatabaseName());
         foreach ([$db->getPdo(), $db->getReadPdo()] as $pdo) {
@@ -39,7 +43,7 @@ abstract class MarketplaceTestCase extends TestCase
         $this->beforeApplicationDestroyed(fn () => $db->rollBack());
 
         $modules = match ($expected) {
-            'frame_payments_test_002' => ['profile', 'marketplace', 'verification', 'work', 'messaging', 'payments'],
+            'frame_payments_test_002' => ['profile', 'marketplace', 'verification', 'work', 'messaging', 'payments', 'reviews'],
             'frame_messaging_test_001' => ['profile', 'marketplace', 'verification', 'work', 'messaging', 'payments'],
             'frame_work_test_001' => ['profile', 'marketplace', 'verification', 'work', 'payments'],
             'frame_verification_test_001' => ['profile', 'marketplace', 'verification', 'payments'],
