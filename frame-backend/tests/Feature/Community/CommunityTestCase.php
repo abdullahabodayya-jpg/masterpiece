@@ -5,7 +5,6 @@ namespace Tests\Feature\Community;
 use App\Models\User;
 use Closure;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 use PDO;
 use Tests\TestCase;
 
@@ -19,15 +18,15 @@ abstract class CommunityTestCase extends TestCase
 
         $connection = DB::connection();
         if ($connection->getDriverName() === 'sqlite' && $connection->getDatabaseName() === ':memory:') {
-            $this->markTestSkipped('Run with the dedicated MariaDB schema frame_community_test_001.');
+            $this->markTestSkipped('Run with the dedicated MariaDB schema frame_community_test_002.');
         }
 
         $this->assertContains($connection->getDriverName(), ['mysql', 'mariadb']);
-        $this->assertSame('frame_community_test_001', $connection->getDatabaseName());
+        $this->assertSame('frame_community_test_002', $connection->getDatabaseName());
         $pdo = $connection->getPdo();
-        $this->assertSame('frame_community_test_001', $pdo->query('SELECT DATABASE()')->fetchColumn());
+        $this->assertSame('frame_community_test_002', $pdo->query('SELECT DATABASE()')->fetchColumn());
         $this->assertStringContainsString('MariaDB', $pdo->getAttribute(PDO::ATTR_SERVER_VERSION));
-        $this->assertSame('frame_community_test_001', $connection->getReadPdo()->query('SELECT DATABASE()')->fetchColumn());
+        $this->assertSame('frame_community_test_002', $connection->getReadPdo()->query('SELECT DATABASE()')->fetchColumn());
 
         if (! self::$migrated) {
             $this->artisan('migrate', ['--force' => true])->assertSuccessful();
@@ -37,7 +36,6 @@ abstract class CommunityTestCase extends TestCase
         $connection->beginTransaction();
         $this->beforeApplicationDestroyed(fn () => $connection->rollBack());
 
-        Route::prefix('api/v1')->middleware('api')->group(base_path('routes/api/community.php'));
     }
 
     protected function signIn(?User $user = null): User

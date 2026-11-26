@@ -5,7 +5,6 @@ namespace Tests\Feature\Marketplace;
 use App\Models\User;
 use Closure;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Route;
 use PDO;
 use Tests\TestCase;
 
@@ -42,16 +41,6 @@ abstract class MarketplaceTestCase extends TestCase
         $db->beginTransaction();
         $this->beforeApplicationDestroyed(fn () => $db->rollBack());
 
-        $modules = match ($expected) {
-            'frame_payments_test_002' => ['profile', 'marketplace', 'verification', 'work', 'messaging', 'payments', 'reviews'],
-            'frame_messaging_test_001' => ['profile', 'marketplace', 'verification', 'work', 'messaging', 'payments'],
-            'frame_work_test_001' => ['profile', 'marketplace', 'verification', 'work', 'payments'],
-            'frame_verification_test_001' => ['profile', 'marketplace', 'verification', 'payments'],
-            default => ['profile', 'marketplace'],
-        };
-        foreach ($modules as $module) {
-            Route::prefix('api/v1')->middleware('api')->group(base_path("routes/api/{$module}.php"));
-        }
     }
 
     protected function expectedDatabase(): string

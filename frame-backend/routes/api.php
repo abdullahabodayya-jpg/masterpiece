@@ -41,3 +41,12 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
 });
+
+require __DIR__.'/api/profile.php';
+require __DIR__.'/api/marketplace.php';
+require __DIR__.'/api/verification.php';
+require __DIR__.'/api/work.php';
+require __DIR__.'/api/messaging.php';
+require __DIR__.'/api/payments.php';
+require __DIR__.'/api/reviews.php';
+require __DIR__.'/api/community.php';

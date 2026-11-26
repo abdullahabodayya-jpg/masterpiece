@@ -46,14 +46,14 @@ class FrameDatabaseTest extends TestCase
 
         $connection = DB::connection();
         if ($connection->getDriverName() === 'sqlite' && $connection->getDatabaseName() === ':memory:') {
-            $this->markTestSkipped('Set DB_CONNECTION=mysql and DB_DATABASE=frame_database_test_001 for MariaDB tests.');
+            $this->markTestSkipped('Set DB_CONNECTION=mysql and DB_DATABASE=frame_database_test_002 for MariaDB tests.');
         }
 
         $this->assertContains($connection->getDriverName(), ['mariadb', 'mysql']);
-        $this->assertSame('frame_database_test_001', $connection->getDatabaseName());
+        $this->assertSame('frame_database_test_002', $connection->getDatabaseName());
 
         $pdo = $connection->getPdo();
-        $this->assertSame('frame_database_test_001', $pdo->query('SELECT DATABASE()')->fetchColumn());
+        $this->assertSame('frame_database_test_002', $pdo->query('SELECT DATABASE()')->fetchColumn());
         $this->assertStringContainsString('MariaDB', $pdo->getAttribute(PDO::ATTR_SERVER_VERSION));
 
         if (! self::$migrated) {
