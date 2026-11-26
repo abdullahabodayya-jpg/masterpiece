@@ -39,9 +39,10 @@ abstract class MarketplaceTestCase extends TestCase
         $this->beforeApplicationDestroyed(fn () => $db->rollBack());
 
         $modules = match ($expected) {
-            'frame_messaging_test_001' => ['profile', 'marketplace', 'verification', 'work', 'messaging'],
-            'frame_work_test_001' => ['profile', 'marketplace', 'verification', 'work'],
-            'frame_verification_test_001' => ['profile', 'marketplace', 'verification'],
+            'frame_payments_test_002' => ['profile', 'marketplace', 'verification', 'work', 'messaging', 'payments'],
+            'frame_messaging_test_001' => ['profile', 'marketplace', 'verification', 'work', 'messaging', 'payments'],
+            'frame_work_test_001' => ['profile', 'marketplace', 'verification', 'work', 'payments'],
+            'frame_verification_test_001' => ['profile', 'marketplace', 'verification', 'payments'],
             default => ['profile', 'marketplace'],
         };
         foreach ($modules as $module) {
@@ -51,6 +52,10 @@ abstract class MarketplaceTestCase extends TestCase
 
     protected function expectedDatabase(): string
     {
+        if (getenv('FRAME_PAYMENTS_REGRESSION') === '1') {
+            return 'frame_payments_test_002';
+        }
+
         if (getenv('FRAME_MESSAGING_REGRESSION') === '1') {
             return 'frame_messaging_test_001';
         }

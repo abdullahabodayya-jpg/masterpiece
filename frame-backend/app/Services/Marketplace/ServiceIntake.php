@@ -9,6 +9,7 @@ use App\Enums\WorkType;
 use App\Models\EditorService;
 use App\Models\User;
 use App\Models\WorkItem;
+use App\Services\Payments\Agreement;
 use Brick\Math\BigDecimal;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -35,6 +36,7 @@ final class ServiceIntake
             abort_if($this->visible($creator)->where('editor_service_id', $service->id)
                 ->whereIn('status', [WorkStatus::Open->value, WorkStatus::PendingAgreement->value])->exists(), 409);
 
+            abort_unless(hash_equals(Agreement::offer($service), $input['offer_fingerprint'] ?? ''), 409);
             $work = $creator->createdWorkItems()->make($input);
             $work->type = WorkType::ServiceRequest;
             $work->status = WorkStatus::Open;
@@ -52,7 +54,7 @@ final class ServiceIntake
         });
     }
 
-    public function transition(User $actor, string $id, WorkStatus $target): WorkItem
+    public function transition(User $actor, string $id, WorkStatus $target, string $fingerprint = ''): WorkItem
     {
         abort_unless(in_array($target, [WorkStatus::PendingAgreement, WorkStatus::Closed, WorkStatus::Cancelled], true), 409);
         $role = $target === WorkStatus::Cancelled ? UserRole::Creator : UserRole::Editor;
@@ -62,7 +64,7 @@ final class ServiceIntake
         $accepting = $target === WorkStatus::PendingAgreement;
         $others = $accepting ? [$candidate->creator_id] : [];
 
-        return $this->access->lockAccounts($actor, $others, function (User $user, array $users) use ($id, $role, $target, $accepting) {
+        return $this->access->lockAccounts($actor, $others, function (User $user, array $users) use ($id, $role, $target, $accepting, $fingerprint) {
             $this->access->actor($user, $role);
             $work = $this->visible($user)->lockForUpdate()->findOrFail($id);
             abort_unless($work->status === WorkStatus::Open, 409);
@@ -76,6 +78,7 @@ final class ServiceIntake
                 abort_unless($service->content_type_id === $work->content_type_id && $service->currency === $work->currency
                     && $service->title === $work->title
                     && $service->price === $work->budget_min && $service->price === $work->budget_max, 409);
+                abort_unless(hash_equals(Agreement::fingerprint(Agreement::terms($work)), $fingerprint), 409);
                 $work->agreed_price = $work->budget_min;
             }
             $work->status = $target;

@@ -10,12 +10,17 @@ use App\Support\ArchivedPivot;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\Feature\Marketplace\MarketplaceTestCase;
 
 final class DeliveryWorkflowTest extends MarketplaceTestCase
 {
     protected function expectedDatabase(): string
     {
+        if (getenv('FRAME_PAYMENTS_REGRESSION') === '1') {
+            return 'frame_payments_test_002';
+        }
+
         return getenv('FRAME_MESSAGING_REGRESSION') === '1' ? 'frame_messaging_test_001' : 'frame_work_test_001';
     }
 
@@ -41,6 +46,7 @@ final class DeliveryWorkflowTest extends MarketplaceTestCase
         $work->status = 'in_progress';
         $work->agreed_at = now();
         $work->started_at = now();
+        $work->currency = 'USD';
         $work->save();
         $this->postJson("{$url}/deliverables", ['title' => 'Cut'])->assertConflict();
         $this->fund($work, ['amount' => '1.00']);
@@ -180,9 +186,35 @@ final class DeliveryWorkflowTest extends MarketplaceTestCase
         $this->assertCount(1, Storage::disk('local')->allFiles('work-deliverables'));
     }
 
+    public function test_delivery_requires_a_unique_matching_sandbox_payment_confirmed_by_activation(): void
+    {
+        foreach ([
+            ['JOD', ['currency' => 'JOD']],
+            ['USD', ['provider_name' => 'synthetic']],
+            ['USD', ['provider_payment_id' => 'cs_test_']],
+            ['USD', ['provider_payment_id' => 'CS_TEST_bad']],
+            ['USD', ['paid_at' => now()->subMinute()]],
+            ['USD', ['creator_id' => User::factory()->creator()->create()->id]],
+        ] as [$currency, $overrides]) {
+            $work = WorkItem::factory()->assigned()->create([
+                'currency' => $currency, 'agreed_at' => now()->subHours(2), 'started_at' => now()->subHour(),
+            ]);
+            $this->fund($work, $overrides);
+            $this->signIn($work->creator);
+            $summary = $this->getJson("/api/v1/work-items/{$work->id}/payment-summary")->assertOk();
+            $this->assertFalse($summary->json('data.funded'), json_encode($overrides, JSON_THROW_ON_ERROR));
+            $this->postJson("/api/v1/work-items/{$work->id}/deliverables", ['title' => 'Invalid funding'])->assertConflict();
+        }
+        $work = $this->activeWork();
+        $this->fund($work);
+        $this->signIn($work->creator);
+        $this->postJson("/api/v1/work-items/{$work->id}/deliverables", ['title' => 'Duplicate funding'])->assertConflict();
+        $this->assertDatabaseCount('deliverables', 0);
+    }
+
     private function activeWork(): WorkItem
     {
-        $work = WorkItem::factory()->assigned()->create();
+        $work = WorkItem::factory()->assigned()->create(['currency' => 'USD']);
         $this->fund($work);
 
         return $work;
@@ -190,7 +222,12 @@ final class DeliveryWorkflowTest extends MarketplaceTestCase
 
     private function fund(WorkItem $work, array $overrides = []): void
     {
-        Payment::factory()->succeeded()->for($work, 'workItem')->create($overrides + ['paid_at' => $work->started_at]);
+        Payment::factory()->succeeded()->for($work, 'workItem')->create($overrides + [
+            'paid_at' => $work->started_at,
+            'currency' => 'USD',
+            'provider_name' => 'stripe_sandbox',
+            'provider_payment_id' => 'cs_test_'.str_replace('-', '', (string) Str::uuid()),
+        ]);
     }
 
     private function video(): UploadedFile

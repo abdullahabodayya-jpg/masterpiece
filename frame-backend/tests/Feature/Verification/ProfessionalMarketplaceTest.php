@@ -60,16 +60,18 @@ final class ProfessionalMarketplaceTest extends VerificationTestCase
         $this->postJson("/api/v1/applications/{$id}/selection")->assertNotFound();
         ArchivedPivot::archive($editor->blockedUsers(), $creator->id);
 
+        $fingerprint = $this->getJson("/api/v1/applications/{$id}")->assertOk()->json('data.terms_fingerprint');
+        $this->postJson("/api/v1/applications/{$id}/selection", ['terms_fingerprint' => str_repeat('a', 64)])->assertConflict();
         Event::listen('eloquent.saving: '.WorkItem::class, function (WorkItem $work) {
             if ($work->editor_id !== null) {
                 throw new \RuntimeException('Synthetic write failure');
             }
         });
-        $this->postJson("/api/v1/applications/{$id}/selection")->assertServerError();
+        $this->postJson("/api/v1/applications/{$id}/selection", ['terms_fingerprint' => $fingerprint])->assertServerError();
         Event::forget('eloquent.saving: '.WorkItem::class);
         $this->assertDatabaseHas('job_applications', ['id' => $id, 'status' => 'shortlisted']);
         $this->assertDatabaseHas('work_items', ['id' => $job->id, 'editor_id' => null, 'status' => 'open']);
-        $this->postJson("/api/v1/applications/{$id}/selection")->assertOk()
+        $this->postJson("/api/v1/applications/{$id}/selection", ['terms_fingerprint' => $fingerprint])->assertOk()
             ->assertJsonPath('data.status', 'pending_agreement')->assertJsonPath('data.agreed_price', '32.50');
         $this->postJson("/api/v1/applications/{$otherId}/selection")->assertConflict();
         $this->assertDatabaseHas('job_applications', ['id' => $otherId, 'status' => 'pending']);

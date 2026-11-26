@@ -18,7 +18,7 @@ final class JobRequest extends ModuleWriteRequest
             'editing_tool_id' => ['sometimes', 'nullable', 'uuid', Rule::exists('editing_tools', 'id')->whereNull('deleted_at')],
             'budget_min' => $money,
             'budget_max' => $money,
-            'currency' => ['sometimes', Rule::in(['JOD'])],
+            'currency' => ['sometimes', Rule::in(['JOD', 'USD'])],
             'deadline' => ['sometimes', 'nullable', 'date', 'after:now', 'before:2038-01-19 03:14:07 UTC'],
             'quantity' => ['sometimes', 'nullable', 'integer', 'between:1,2147483647'],
         ];

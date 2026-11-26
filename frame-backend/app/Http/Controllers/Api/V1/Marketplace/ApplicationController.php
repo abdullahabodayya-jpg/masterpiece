@@ -39,7 +39,7 @@ final class ApplicationController
 
     public function show(Request $request, string $applicationId): ApplicationResource
     {
-        return new ApplicationResource($this->applications->visible($request->user('sanctum'))->findOrFail($applicationId));
+        return new ApplicationResource($this->applications->visible($request->user('sanctum'))->with('workItem')->findOrFail($applicationId));
     }
 
     public function store(ApplicationRequest $request, string $workItemId): JsonResponse
@@ -60,7 +60,9 @@ final class ApplicationController
 
     public function select(Request $request, string $applicationId): WorkResource
     {
-        return new WorkResource($this->applications->select($request->user('sanctum'), $applicationId));
+        $fingerprint = $request->validate(['terms_fingerprint' => ['sometimes', 'required', 'string', 'size:64']])['terms_fingerprint'] ?? '';
+
+        return new WorkResource($this->applications->select($request->user('sanctum'), $applicationId, $fingerprint));
     }
 
     public function withdraw(Request $request, string $applicationId): ApplicationResource

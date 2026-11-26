@@ -8,6 +8,10 @@ abstract class VerificationTestCase extends MarketplaceTestCase
 {
     protected function expectedDatabase(): string
     {
+        if (getenv('FRAME_PAYMENTS_REGRESSION') === '1') {
+            return 'frame_payments_test_002';
+        }
+
         if (getenv('FRAME_MESSAGING_REGRESSION') === '1') {
             return 'frame_messaging_test_001';
         }
