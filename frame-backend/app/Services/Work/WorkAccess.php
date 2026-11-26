@@ -2,19 +2,22 @@
 
 namespace App\Services\Work;
 
-use App\Enums\PaymentStatus;
 use App\Enums\UserRole;
 use App\Enums\WorkStatus;
 use App\Models\User;
 use App\Models\WorkItem;
 use App\Services\Marketplace\MarketplaceAccess;
+use App\Services\Payments\PaymentAccess;
 use Brick\Math\BigDecimal;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 
 final class WorkAccess
 {
-    public function __construct(private readonly MarketplaceAccess $accounts) {}
+    public function __construct(
+        private readonly MarketplaceAccess $accounts,
+        private readonly PaymentAccess $payments,
+    ) {}
 
     public function participant(User $actor): Builder
     {
@@ -62,13 +65,6 @@ final class WorkAccess
             409,
         );
 
-        abort_unless($work->payments()
-            ->where('status', PaymentStatus::Succeeded->value)
-            ->where('creator_id', $work->creator_id)
-            ->where('currency', $work->currency)
-            ->where('amount', $work->agreed_price)
-            ->whereNotNull('paid_at')->where('paid_at', '<=', $work->started_at)
-            ->where('provider_name', '<>', '')->where('provider_payment_id', '<>', '')
-            ->exists(), 409);
+        abort_unless($this->payments->funding($work)->count() === 1, 409);
     }
 }

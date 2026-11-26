@@ -33,7 +33,7 @@ final class JobService
             abort_unless($job->status === WorkStatus::Draft && $job->editor_id === null, 409);
             $job->fill($data);
 
-            foreach (['content_type_id', 'editing_tool_id'] as $field) {
+            foreach (['content_type_id', 'editing_tool_id', 'currency'] as $field) {
                 if (array_key_exists($field, $data)) {
                     $job->{$field} = $data[$field];
                 }

@@ -25,6 +25,8 @@ final class ServiceIntakeTest extends VerificationTestCase
         ArchivedPivot::attachOrRestore($creator->blockedUsers(), $editor->id);
         $this->postJson($url, $input)->assertNotFound();
         ArchivedPivot::archive($creator->blockedUsers(), $editor->id);
+        $this->postJson($url, $input)->assertConflict();
+        $input['offer_fingerprint'] = $this->getJson("/api/v1/services/{$offer->id}")->assertOk()->json('data.offer_fingerprint');
 
         $this->postJson($url, [...$input, 'quantity' => 2])->assertUnprocessable();
         $this->postJson($url, $input + ['editor_id' => $creator->id])->assertUnprocessable();
@@ -38,13 +40,14 @@ final class ServiceIntakeTest extends VerificationTestCase
         $this->postJson("/api/v1/work-items/{$id}/service-selection")->assertNotFound();
         $this->signIn($editor);
         $this->getJson('/api/v1/me/service-requests')->assertOk()->assertJsonPath('data.0.id', $id);
+        $fingerprint = $this->getJson("/api/v1/work-items/{$id}/agreement")->assertOk()->json('data.terms_fingerprint');
         $offer->price = '35.00';
         $offer->save();
         $this->postJson("/api/v1/work-items/{$id}/service-selection")->assertConflict();
 
         $offer->price = '29.50';
         $offer->save();
-        $this->postJson("/api/v1/work-items/{$id}/service-selection")->assertOk()
+        $this->postJson("/api/v1/work-items/{$id}/service-selection", ['terms_fingerprint' => $fingerprint])->assertOk()
             ->assertJsonPath('data.status', 'pending_agreement')->assertJsonPath('data.agreed_price', '29.50');
         $this->postJson("/api/v1/work-items/{$id}/service-rejection")->assertConflict();
         $this->assertDatabaseHas('work_items', ['id' => $id, 'agreed_at' => null, 'started_at' => null]);
@@ -59,9 +62,10 @@ final class ServiceIntakeTest extends VerificationTestCase
         EditorVerificationRequest::factory()->for($editor, 'editor')->create(['status' => 'approved', 'decided_at' => now()]);
         ArchivedPivot::attachOrRestore($editor->contentTypes(), $offer->content_type_id);
         $url = "/api/v1/services/{$offer->id}/requests";
-        $id = $this->postJson($url, ['description' => 'A short clip'])->assertCreated()->json('data.id');
+        $offerFingerprint = $this->getJson("/api/v1/services/{$offer->id}")->assertOk()->json('data.offer_fingerprint');
+        $id = $this->postJson($url, ['description' => 'A short clip', 'offer_fingerprint' => $offerFingerprint])->assertCreated()->json('data.id');
         $this->postJson("/api/v1/work-items/{$id}/service-cancellation")->assertOk()->assertJsonPath('data.status', 'cancelled');
-        $second = $this->postJson($url, ['description' => 'A different clip'])->assertCreated()->json('data.id');
+        $second = $this->postJson($url, ['description' => 'A different clip', 'offer_fingerprint' => $offerFingerprint])->assertCreated()->json('data.id');
         $this->signIn($editor);
         $this->postJson("/api/v1/work-items/{$second}/service-rejection")->assertOk()->assertJsonPath('data.status', 'closed');
         $this->assertDatabaseHas('work_items', ['id' => $second, 'status' => 'closed', 'agreed_price' => null]);

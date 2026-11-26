@@ -9,6 +9,7 @@ use App\Enums\WorkType;
 use App\Models\JobApplication;
 use App\Models\User;
 use App\Models\WorkItem;
+use App\Services\Payments\Agreement;
 use Brick\Math\BigDecimal;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -76,13 +77,15 @@ final class ApplicationService
         });
     }
 
-    public function select(User $actor, string $id): WorkItem
+    public function select(User $actor, string $id, string $fingerprint): WorkItem
     {
         return $this->onOpenApplication($actor, $id, UserRole::Creator,
-            function (JobApplication $application, WorkItem $job): WorkItem {
+            function (JobApplication $application, WorkItem $job) use ($fingerprint): WorkItem {
                 abort_unless(in_array($application->status, [ApplicationStatus::Pending, ApplicationStatus::Shortlisted], true)
                     && $application->proposed_price !== null && BigDecimal::of($application->proposed_price)->isPositive(), 409);
                 abort_if($job->jobApplications()->where('status', ApplicationStatus::Accepted->value)->exists(), 409);
+
+                abort_unless(hash_equals(Agreement::selection($job, $application), $fingerprint), 409);
 
                 $application->status = ApplicationStatus::Accepted;
                 $application->save();

@@ -27,7 +27,9 @@ final class ServiceIntakeController
 
     public function accept(Request $request, string $workItemId): WorkResource
     {
-        return new WorkResource($this->intake->transition($request->user('sanctum'), $workItemId, WorkStatus::PendingAgreement));
+        $fingerprint = $request->validate(['terms_fingerprint' => ['sometimes', 'required', 'string', 'size:64']])['terms_fingerprint'] ?? '';
+
+        return new WorkResource($this->intake->transition($request->user('sanctum'), $workItemId, WorkStatus::PendingAgreement, $fingerprint));
     }
 
     public function reject(Request $request, string $workItemId): WorkResource

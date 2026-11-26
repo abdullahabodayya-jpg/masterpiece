@@ -14,6 +14,10 @@ final class MessagingTest extends MarketplaceTestCase
 {
     protected function expectedDatabase(): string
     {
+        if (getenv('FRAME_PAYMENTS_REGRESSION') === '1') {
+            return 'frame_payments_test_002';
+        }
+
         return 'frame_messaging_test_001';
     }
 
