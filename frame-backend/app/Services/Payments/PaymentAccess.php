@@ -83,10 +83,28 @@ final class PaymentAccess
         $now = now();
         $confirmedBy = $work->started_at !== null && $work->started_at->lte($now) ? $work->started_at : $now;
 
-        return Payment::query()->where('work_item_id', $work->id)->where('creator_id', $work->creator_id)
-            ->where('provider_name', 'stripe_sandbox')->whereRaw('CAST(provider_payment_id AS BINARY) REGEXP ?', ['^cs_test_[A-Za-z0-9]+$'])
-            ->where('status', PaymentStatus::Succeeded->value)->where('currency', 'USD')->where('currency', $work->currency)
-            ->where('amount', $work->agreed_price)->whereNotNull('paid_at')->where('paid_at', '<=', $confirmedBy)
+        return $this->sandboxPayments()->where('work_item_id', $work->id)->where('creator_id', $work->creator_id)
+            ->where('currency', $work->currency)->where('amount', $work->agreed_price)->where('paid_at', '<=', $confirmedBy);
+    }
+
+    public function fundedStartedWork(Builder $work): Builder
+    {
+        $matching = $this->sandboxPayments()->selectRaw('COUNT(*)')
+            ->whereColumn('payments.work_item_id', 'work_items.id')
+            ->whereColumn('payments.creator_id', 'work_items.creator_id')
+            ->whereColumn('payments.currency', 'work_items.currency')
+            ->whereColumn('payments.amount', 'work_items.agreed_price')
+            ->whereColumn('payments.paid_at', '<=', 'work_items.started_at')
+            ->where('payments.paid_at', '<=', now());
+
+        return $work->where($matching->toBase(), '=', 1);
+    }
+
+    private function sandboxPayments(): Builder
+    {
+        return Payment::query()->where('provider_name', 'stripe_sandbox')
+            ->whereRaw('CAST(provider_payment_id AS BINARY) REGEXP ?', ['^cs_test_[A-Za-z0-9]+$'])
+            ->where('status', PaymentStatus::Succeeded->value)->where('currency', 'USD')->whereNotNull('paid_at')
             ->whereDoesntHave('workItem.payments.refunds', self::blockingRefunds(...));
     }
 }
