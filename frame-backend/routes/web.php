@@ -11,3 +11,5 @@ Route::get('/api/v1/csrf-cookie', [
     CsrfCookieController::class,
     'show',
 ]);
+
+require __DIR__.'/web/admin.php';

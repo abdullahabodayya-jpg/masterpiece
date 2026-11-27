@@ -50,3 +50,4 @@ require __DIR__.'/api/messaging.php';
 require __DIR__.'/api/payments.php';
 require __DIR__.'/api/reviews.php';
 require __DIR__.'/api/community.php';
+require __DIR__.'/api/admin.php';
